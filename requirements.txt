@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg
+psycopg2-binary
+taskiq[redis]
+taskiq-fastapi
+feedparser
+beautifulsoup4
+spacy
+pydantic
+pydantic-settings
+python-dotenv
