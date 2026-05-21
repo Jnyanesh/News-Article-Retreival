@@ -19,7 +19,7 @@ class Article(Base):
         Index('idx_article_search_vector', search_vector, postgresql_using='gin'),
     )
 
-update_search_vector_ddl = DDL(
+update_search_vector_func_ddl = DDL(
     """
     CREATE OR REPLACE FUNCTION update_article_search_vector() RETURNS trigger AS $$
     BEGIN
@@ -29,12 +29,19 @@ update_search_vector_ddl = DDL(
         RETURN NEW;
     END;
     $$ LANGUAGE plpgsql;
+    """
+)
 
-    DROP TRIGGER IF EXISTS article_search_vector_trigger ON articles;
+drop_trigger_ddl = DDL("DROP TRIGGER IF EXISTS article_search_vector_trigger ON articles;")
+
+create_trigger_ddl = DDL(
+    """
     CREATE TRIGGER article_search_vector_trigger
     BEFORE INSERT OR UPDATE ON articles
     FOR EACH ROW EXECUTE PROCEDURE update_article_search_vector();
     """
 )
 
-event.listen(Article.__table__, 'after_create', update_search_vector_ddl)
+event.listen(Article.__table__, 'after_create', update_search_vector_func_ddl)
+event.listen(Article.__table__, 'after_create', drop_trigger_ddl)
+event.listen(Article.__table__, 'after_create', create_trigger_ddl)

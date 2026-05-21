@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsLens - AI News Retrieval</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #1e293b, #0f172a);
+        }
+
+        header {
+            width: 100%;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: #94a3b8;
+            font-weight: 300;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin-top: 2rem;
+        }
+
+        .search-box {
+            display: flex;
+            width: 100%;
+            margin-bottom: 3rem;
+            backdrop-filter: blur(10px);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 50px;
+            padding: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .search-box:focus-within {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            padding: 0.5rem 1.5rem;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .article-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(5px);
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .article-card h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.4rem;
+        }
+
+        .article-card a {
+            color: #60a5fa;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .article-card a:hover {
+            text-decoration: underline;
+            color: #93c5fd;
+        }
+
+        .meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 1rem;
+        }
+
+        .tag {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        .recommend-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .recommend-btn:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .recommendations-container {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            display: none;
+        }
+
+        .recommendation-item {
+            padding: 0.8rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .recommendation-item h4 {
+            margin: 0 0 0.3rem 0;
+            font-size: 1rem;
+        }
+
+        .stats {
+            margin-bottom: 1rem;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .loader {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>NewsLens</h1>
+    <p class="subtitle">Deterministic High-Performance Retrieval</p>
+</header>
+
+<div class="container">
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search for news, topics, or keywords..." onkeypress="handleKeyPress(event)">
+        <button onclick="performSearch()">Search</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+    <div class="loader" id="mainLoader"></div>
+    <div class="results" id="resultsContainer">
+        <!-- Results go here -->
+    </div>
+</div>
+
+<script>
+    async function performSearch() {
+        const query = document.getElementById('searchInput').value.trim();
+        if (!query) return;
+
+        const resultsContainer = document.getElementById('resultsContainer');
+        const statsContainer = document.getElementById('stats');
+        const loader = document.getElementById('mainLoader');
+
+        resultsContainer.innerHTML = '';
+        statsContainer.innerHTML = '';
+        loader.style.display = 'block';
+
+        try {
+            const response = await fetch(`/search?q=${encodeURIComponent(query)}&limit=15`);
+            const data = await response.json();
+            
+            loader.style.display = 'none';
+            statsContainer.innerHTML = `Found ${data.results.length} results in ${data.latency_ms}ms`;
+
+            if (data.results.length === 0) {
+                resultsContainer.innerHTML = '<p>No articles found. Try different keywords.</p>';
+                return;
+            }
+
+            data.results.forEach((article, index) => {
+                const card = document.createElement('div');
+                card.className = 'article-card';
+                card.style.animationDelay = `${index * 0.05}s`;
+                
+                const date = article.published_at ? new Date(article.published_at).toLocaleDateString() : 'Unknown Date';
+
+                card.innerHTML = `
+                    <span class="tag">${article.category || 'news'}</span>
+                    <h2><a href="${article.url}" target="_blank">${article.title}</a></h2>
+                    <div class="meta">
+                        <span>Score: ${article.final_score.toFixed(4)}</span>
+                        <span>Source: ${article.source}</span>
+                        <span>Date: ${date}</span>
+                    </div>
+                    <button class="recommend-btn" onclick="fetchRecommendations(${article.id}, this)">
+                        Find Similar Articles
+                    </button>
+                    <div class="recommendations-container" id="rec-${article.id}">
+                        <!-- Recommendations go here -->
+                    </div>
+                `;
+                resultsContainer.appendChild(card);
+            });
+        } catch (err) {
+            loader.style.display = 'none';
+            statsContainer.innerHTML = '<span style="color:#ef4444">Error fetching results.</span>';
+        }
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    }
+
+    async function fetchRecommendations(articleId, btnElement) {
+        const recContainer = document.getElementById(`rec-${articleId}`);
+        
+        // Toggle if already loaded
+        if (recContainer.style.display === 'block') {
+            recContainer.style.display = 'none';
+            btnElement.textContent = 'Find Similar Articles';
+            return;
+        }
+
+        btnElement.textContent = 'Loading...';
+
+        try {
+            const response = await fetch(`/recommend/${articleId}?limit=3`);
+            const data = await response.json();
+            
+            recContainer.innerHTML = `
+                <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem;">
+                    Keywords used: ${data.keywords_used.join(', ')}
+                </div>
+            `;
+
+            if (!data.recommendations || data.recommendations.length === 0) {
+                recContainer.innerHTML += '<p style="font-size:0.9rem; color:#94a3b8;">No similar articles found.</p>';
+            } else {
+                data.recommendations.forEach(rec => {
+                    recContainer.innerHTML += `
+                        <div class="recommendation-item">
+                            <span class="tag" style="font-size:0.65rem;">${rec.category}</span>
+                            <h4><a href="${rec.url}" target="_blank">${rec.title}</a></h4>
+                        </div>
+                    `;
+                });
+            }
+            
+            recContainer.style.display = 'block';
+            btnElement.textContent = 'Hide Similar Articles';
+        } catch (err) {
+            btnElement.textContent = 'Find Similar Articles';
+            alert("Error loading recommendations.");
+        }
+    }
+</script>
+
+</body>
+</html>
